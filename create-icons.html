@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+    <br>
+    <a id="download192" download="icon-192.png">Download 192x192</a>
+    <br>
+    <a id="download512" download="icon-512.png">Download 512x512</a>
+
+    <script>
+        function createIcon(size, canvasId, downloadId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Pyramid shape
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.moveTo(size/2, size/4);
+            ctx.lineTo(size/4, size*3/4);
+            ctx.lineTo(size*3/4, size*3/4);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Convert to download link
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                document.getElementById(downloadId).href = url;
+            });
+        }
+        
+        createIcon(192, 'canvas192', 'download192');
+        createIcon(512, 'canvas512', 'download512');
+    </script>
+</body>
+</html>
