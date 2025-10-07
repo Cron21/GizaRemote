@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#111827" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icons/icon-192.png" />
+    <title>Giza Pyramid Remote</title>
+    <meta name="description" content="Wireless remote for Lolin32 Lite via Wi‑Fi or BLE" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Giza Pyramid Remote</h1>
+      <button id="installBtn" class="secondary" hidden>Install App</button>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <h2>Connection</h2>
+        <div class="connection-grid">
+          <div>
+            <label for="espIp">ESP32 IP (Wi‑Fi)</label>
+            <div class="row">
+              <input id="espIp" type="text" placeholder="e.g. 192.168.1.50" inputmode="decimal" />
+              <button id="saveIpBtn" class="secondary">Save</button>
+            </div>
+            <div class="row">
+              <button id="wifiTestBtn">Test Wi‑Fi</button>
+            </div>
+            <small id="wifiStatus" class="status">Not connected</small>
+          </div>
+          <div>
+            <label>Bluetooth LE</label>
+            <div class="row">
+              <button id="bleConnectBtn">Connect BLE</button>
+              <button id="bleDisconnectBtn" class="danger" disabled>Disconnect</button>
+            </div>
+            <small id="bleStatus" class="status">Not connected</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Controls</h2>
+        <div class="controls-grid">
+          <button id="dayBtn" class="mode">Day</button>
+          <button id="nightBtn" class="mode">Night</button>
+          <button id="stormBtn" class="mode danger">Storm</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Status</h2>
+        <div class="status-grid">
+          <div><span class="label">Mode</span><span id="modeValue">—</span></div>
+          <div><span class="label">Sound</span><span id="soundValue">—</span></div>
+          <div><span class="label">Vibration</span><span id="vibrationValue">—</span></div>
+          <div><span class="label">Proximity (cm)</span><span id="proximityValue">—</span></div>
+          <div><span class="label">Device</span><span id="deviceConn">Wi‑Fi/BLE</span></div>
+        </div>
+        <div class="row">
+          <button id="refreshStatusBtn" class="secondary">Refresh Now</button>
+          <label class="switch">
+            <input type="checkbox" id="autoRefreshToggle" />
+            <span class="slider"></span>
+          </label>
+          <span>Auto refresh</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <details>
+          <summary>Help</summary>
+          <ul>
+            <li>For Wi‑Fi, ensure your phone is on the same LAN as the ESP32.</li>
+            <li>For BLE, Chrome on Android supports Web Bluetooth. iOS Safari currently has limited support.</li>
+            <li>The ESP32 exposes POST /command and GET /status endpoints and a BLE writable characteristic.</li>
+          </ul>
+        </details>
+      </section>
+    </main>
+
+    <footer class="app-footer">© Giza Pyramid</footer>
+
+    <script src="./assets/app.js" defer></script>
+  </body>
+  </html>
+
+
