@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Proxy</title>
+</head>
+<body>
+    <h1>ESP32 Proxy</h1>
+    <p>This page acts as a proxy for ESP32 communication.</p>
+    <p>Use the main PWA at: <a href="./index.html">Giza Pyramid Remote</a></p>
+    
+    <script>
+        // Simple proxy using fetch to ESP32
+        const ESP32_IP = '192.168.254.170'; // Update this with your ESP32 IP
+        
+        // Handle command requests
+        if (window.location.pathname.includes('/esp32/command')) {
+            const command = new URLSearchParams(window.location.search).get('cmd') || 'DAY';
+            fetch(`http://${ESP32_IP}/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: command
+            }).then(response => response.text())
+              .then(data => {
+                document.body.innerHTML = `<h1>Command Sent</h1><p>Command: ${command}</p><p>Response: ${data}</p>`;
+              })
+              .catch(error => {
+                document.body.innerHTML = `<h1>Error</h1><p>Failed to send command: ${error.message}</p>`;
+              });
+        }
+        
+        // Handle status requests
+        if (window.location.pathname.includes('/esp32/status')) {
+            fetch(`http://${ESP32_IP}/status`)
+              .then(response => response.json())
+              .then(data => {
+                document.body.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+              })
+              .catch(error => {
+                document.body.innerHTML = `<h1>Error</h1><p>Failed to get status: ${error.message}</p>`;
+              });
+        }
+    </script>
+</body>
+</html>

@@ -1,13 +1,13 @@
 {
   "name": "Giza Pyramid Remote",
   "short_name": "Giza Remote",
-  "start_url": "/",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0b1220",
   "theme_color": "#111827",
   "description": "Wireless remote for Lolin32 Lite via Wi‑Fi or BLE",
-  "scope": "/",
+  "scope": "./",
   "lang": "en",
   "categories": ["utilities", "productivity"],
   "icons": [
