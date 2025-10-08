@@ -73,24 +73,28 @@ saveIpBtn.addEventListener('click', () => {
 
 wifiTestBtn.addEventListener('click', async () => {
   try {
+    wifiStatus.textContent = 'Testing...';
     const status = await fetchStatus();
     wifiStatus.textContent = 'Wi‑Fi reachable';
     renderStatus(status);
     state.deviceTransport = 'wifi';
     updateDeviceConn();
   } catch (e) {
-    wifiStatus.textContent = 'Wi‑Fi not reachable';
+    console.error('Wi-Fi test failed:', e);
+    wifiStatus.textContent = `Wi‑Fi error: ${e.message}`;
   }
 });
 
 bleConnectBtn.addEventListener('click', async () => {
   try {
+    bleStatus.textContent = 'Connecting...';
     await bleConnect();
     bleStatus.textContent = 'BLE connected';
     state.deviceTransport = 'ble';
     updateDeviceConn();
   } catch (e) {
-    bleStatus.textContent = 'BLE connect failed';
+    console.error('BLE connect failed:', e);
+    bleStatus.textContent = `BLE error: ${e.message}`;
   }
 });
 
@@ -139,37 +143,62 @@ function updateDeviceConn() {
 }
 
 async function sendCommand(cmd) {
-  if (state.deviceTransport === 'ble' && state.ble.characteristic) {
-    const encoder = new TextEncoder();
-    await state.ble.characteristic.writeValue(encoder.encode(cmd));
-    return;
+  try {
+    if (state.deviceTransport === 'ble' && state.ble.characteristic) {
+      const encoder = new TextEncoder();
+      await state.ble.characteristic.writeValue(encoder.encode(cmd));
+      console.log('BLE command sent:', cmd);
+      return;
+    }
+    const ip = state.espIp || espIpInput.value.trim();
+    if (!ip) {
+      alert('Enter ESP32 IP address first or connect via BLE.');
+      return;
+    }
+    const url = `http://${ip}/command`;
+    console.log('Sending Wi-Fi command:', cmd, 'to', url);
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: cmd });
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    console.log('Wi-Fi command sent successfully');
+  } catch (e) {
+    console.error('Command failed:', e);
+    alert(`Command failed: ${e.message}`);
   }
-  if (!state.espIp) {
-    alert('Set ESP32 IP first or connect via BLE.');
-    return;
-  }
-  const url = `http://${state.espIp}/command`;
-  await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: cmd });
 }
 
 async function fetchStatus() {
-  if (!state.espIp) throw new Error('No IP');
-  const url = `http://${state.espIp}/status`;
+  const ip = state.espIp || espIpInput.value.trim();
+  if (!ip) throw new Error('No IP - enter ESP32 IP address');
+  const url = `http://${ip}/status`;
+  console.log('Fetching status from:', url);
   const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Status error');
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   return await res.json();
 }
 
 function renderStatus(st) {
   if (!st) return;
   modeValue.textContent = st.mode || '—';
-  soundValue.textContent = st.sound ? '1' : '0';
-  vibrationValue.textContent = st.vibration ? '1' : '0';
+  // Display what sensors detect
+  // ESP32 JSON: sound = 1 when digitalRead == LOW (sound detected)
+  //             vibration = 1 when digitalRead == HIGH (vibration detected)
+  const soundDetected = !!st.sound;
+  const vibrationDetected = !!st.vibration;
+  soundValue.textContent = soundDetected ? 'Detected' : 'None';
+  vibrationValue.textContent = vibrationDetected ? 'Detected' : 'None';
   proximityValue.textContent = st.proximity ?? '—';
 }
 
 async function bleConnect() {
-  if (!navigator.bluetooth) throw new Error('Web Bluetooth not supported');
+  if (!navigator.bluetooth) {
+    throw new Error('Web Bluetooth not supported. Use Chrome on Android or enable experimental features.');
+  }
+  
+  // Check if Bluetooth is available
+  if (!await navigator.bluetooth.getAvailability()) {
+    throw new Error('Bluetooth not available. Enable Bluetooth on your device.');
+  }
+  
   const device = await navigator.bluetooth.requestDevice({
     filters: [{ name: DEFAULT_DEVICE_NAME }, { services: [BLE_SERVICE_UUID] }],
     optionalServices: [BLE_SERVICE_UUID]

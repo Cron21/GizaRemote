@@ -1,4 +1,4 @@
-const CACHE_NAME = 'giza-remote-v1';
+const CACHE_NAME = 'giza-remote-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -9,13 +9,23 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll(ASSETS);
+      // Activate new SW immediately
+      await self.skipWaiting();
+    })()
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((k) => (k === CACHE_NAME ? null : caches.delete(k)))))
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => (k === CACHE_NAME ? null : caches.delete(k))));
+      // Control all clients immediately
+      await self.clients.claim();
+    })()
   );
 });
 
