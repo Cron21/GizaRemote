@@ -38,6 +38,8 @@ const deviceConn = $('deviceConn');
 const refreshStatusBtn = $('refreshStatusBtn');
 const autoRefreshToggle = $('autoRefreshToggle');
 const installBtn = $('installBtn');
+const proxyAddrInput = $('proxyAddr');
+const saveProxyBtn = $('saveProxyBtn');
 
 // PWA install prompt
 let deferredPrompt = null;
@@ -71,6 +73,7 @@ if ('serviceWorker' in navigator) {
 // Init
 espIpInput.value = state.espIp;
 updateDeviceConn();
+proxyAddrInput.value = localStorage.getItem('proxyAddr') || '';
 
 saveIpBtn.addEventListener('click', () => {
   state.espIp = (espIpInput.value || '').trim();
@@ -78,13 +81,14 @@ saveIpBtn.addEventListener('click', () => {
   wifiStatus.textContent = 'Saved IP: ' + state.espIp;
 });
 
+saveProxyBtn.addEventListener('click', () => {
+  const proxyAddr = (proxyAddrInput.value || '').trim();
+  localStorage.setItem('proxyAddr', proxyAddr);
+  wifiStatus.textContent = 'Saved Proxy: ' + proxyAddr;
+});
+
 wifiTestBtn.addEventListener('click', async () => {
   try {
-    // Check if we're on HTTPS
-    if (window.location.protocol === 'https:') {
-      wifiStatus.textContent = 'Cannot connect via HTTPS. Use HTTP or local proxy.';
-      return;
-    }
     const status = await fetchStatus();
     wifiStatus.textContent = 'Wi‑Fi reachable';
     renderStatus(status);
@@ -156,62 +160,33 @@ async function sendCommand(cmd) {
     await state.ble.characteristic.writeValue(encoder.encode(cmd));
     return;
   }
-  if (!state.espIp) {
-    alert('Set ESP32 IP first or connect via BLE.');
+  const proxyAddr = localStorage.getItem('proxyAddr') || '';
+  if (!proxyAddr) {
+    alert('Set Proxy Server Address first.');
     return;
   }
-  
   try {
-    // If using HTTPS, first ensure proxy knows our ESP32 IP
-    if (window.location.protocol === 'https:') {
-      await fetch('http://localhost:3000/set-ip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ip: state.espIp })
-      });
-    }
-
-    // Use proxy if on HTTPS
-    const baseUrl = window.location.protocol === 'https:' 
-      ? 'http://localhost:3000/proxy'  // Local proxy
-      : `http://${state.espIp}`;
-      
-    const url = `${baseUrl}/command`;
-    await fetch(url, { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'text/plain' }, 
-      body: cmd 
+    const url = `http://${proxyAddr}/proxy/command`;
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: cmd
     });
   } catch (error) {
     console.error('Command error:', error);
-    alert('Failed to send command. Check console for details.');
+    alert('Failed to send command via proxy. Check console for details.');
   }
 }
 
 async function fetchStatus() {
-  if (!state.espIp) throw new Error('No IP');
-  
+  const proxyAddr = localStorage.getItem('proxyAddr') || '';
+  if (!proxyAddr) throw new Error('Set Proxy Server Address first.');
   try {
-    // If using HTTPS, first ensure proxy knows our ESP32 IP
-    if (window.location.protocol === 'https:') {
-      await fetch('http://localhost:3000/set-ip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ip: state.espIp })
-      });
-    }
-
-    // Use proxy if on HTTPS
-    const baseUrl = window.location.protocol === 'https:' 
-      ? 'http://localhost:3000/proxy'  // Local proxy
-      : `http://${state.espIp}`;
-      
-    const url = `${baseUrl}/status`;
-    const res = await fetch(url, { 
+    const url = `http://${proxyAddr}/proxy/status`;
+    const res = await fetch(url, {
       cache: 'no-store',
       headers: { 'Accept': 'application/json' }
     });
-    
     if (!res.ok) throw new Error(`Status error: ${res.status}`);
     return await res.json();
   } catch (error) {
