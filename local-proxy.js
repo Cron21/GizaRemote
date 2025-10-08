@@ -5,13 +5,10 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const app = express();
 const port = 3000;
 const DEFAULT_ESP32_IP = '192.168.254.170';
+let targetIP = DEFAULT_ESP32_IP;
 
 // Enable CORS for all origins in development
 app.use(cors());
-
-// Default ESP32 IP - change this to your ESP32's IP
-const DEFAULT_ESP32_IP = '192.168.254.170';
-let targetIP = DEFAULT_ESP32_IP;
 
 // Home route to show proxy status
 app.get('/', (req, res) => {
@@ -28,7 +25,7 @@ app.get('/', (req, res) => {
 });
 
 // Store ESP32 IP
-let targetIP = '';
+// (Removed duplicate declaration)
 
 // Endpoint to set ESP32 IP
 app.post('/set-ip', express.json(), (req, res) => {
