@@ -80,6 +80,11 @@ saveIpBtn.addEventListener('click', () => {
 
 wifiTestBtn.addEventListener('click', async () => {
   try {
+    // Check if we're on HTTPS
+    if (window.location.protocol === 'https:') {
+      wifiStatus.textContent = 'Cannot connect via HTTPS. Use HTTP or local proxy.';
+      return;
+    }
     const status = await fetchStatus();
     wifiStatus.textContent = 'Wi‑Fi reachable';
     renderStatus(status);
@@ -155,13 +160,25 @@ async function sendCommand(cmd) {
     alert('Set ESP32 IP first or connect via BLE.');
     return;
   }
-  const url = `http://${state.espIp}/command`;
+  
+  // Use proxy if on HTTPS
+  const baseUrl = window.location.protocol === 'https:' 
+    ? 'http://localhost:3000/proxy'  // Local proxy
+    : `http://${state.espIp}`;
+    
+  const url = `${baseUrl}/command`;
   await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: cmd });
 }
 
 async function fetchStatus() {
   if (!state.espIp) throw new Error('No IP');
-  const url = `http://${state.espIp}/status`;
+  
+  // Use proxy if on HTTPS
+  const baseUrl = window.location.protocol === 'https:' 
+    ? 'http://localhost:3000/proxy'  // Local proxy
+    : `http://${state.espIp}`;
+    
+  const url = `${baseUrl}/status`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error('Status error');
   return await res.json();
