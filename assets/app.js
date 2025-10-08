@@ -161,27 +161,63 @@ async function sendCommand(cmd) {
     return;
   }
   
-  // Use proxy if on HTTPS
-  const baseUrl = window.location.protocol === 'https:' 
-    ? 'http://localhost:3000/proxy'  // Local proxy
-    : `http://${state.espIp}`;
-    
-  const url = `${baseUrl}/command`;
-  await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: cmd });
+  try {
+    // If using HTTPS, first ensure proxy knows our ESP32 IP
+    if (window.location.protocol === 'https:') {
+      await fetch('http://localhost:3000/set-ip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ip: state.espIp })
+      });
+    }
+
+    // Use proxy if on HTTPS
+    const baseUrl = window.location.protocol === 'https:' 
+      ? 'http://localhost:3000/proxy'  // Local proxy
+      : `http://${state.espIp}`;
+      
+    const url = `${baseUrl}/command`;
+    await fetch(url, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'text/plain' }, 
+      body: cmd 
+    });
+  } catch (error) {
+    console.error('Command error:', error);
+    alert('Failed to send command. Check console for details.');
+  }
 }
 
 async function fetchStatus() {
   if (!state.espIp) throw new Error('No IP');
   
-  // Use proxy if on HTTPS
-  const baseUrl = window.location.protocol === 'https:' 
-    ? 'http://localhost:3000/proxy'  // Local proxy
-    : `http://${state.espIp}`;
+  try {
+    // If using HTTPS, first ensure proxy knows our ESP32 IP
+    if (window.location.protocol === 'https:') {
+      await fetch('http://localhost:3000/set-ip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ip: state.espIp })
+      });
+    }
+
+    // Use proxy if on HTTPS
+    const baseUrl = window.location.protocol === 'https:' 
+      ? 'http://localhost:3000/proxy'  // Local proxy
+      : `http://${state.espIp}`;
+      
+    const url = `${baseUrl}/status`;
+    const res = await fetch(url, { 
+      cache: 'no-store',
+      headers: { 'Accept': 'application/json' }
+    });
     
-  const url = `${baseUrl}/status`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Status error');
-  return await res.json();
+    if (!res.ok) throw new Error(`Status error: ${res.status}`);
+    return await res.json();
+  } catch (error) {
+    console.error('Status error:', error);
+    throw error;
+  }
 }
 
 function renderStatus(st) {
